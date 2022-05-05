@@ -1,0 +1,67 @@
+1 - create appspec.yml file including all the scripts that it depends on 
+
+//Create AWS bucket
+2 - aws s3 mb s3://usman.uk.codebucket 
+
+3 - Configure access policies on bucket  (policies.txt)
+
+4 - Create application and push code to S3 bucket 
+
+5 - aws deploy push \
+  --application-name WordPress_App \
+  --s3-location s3://codedeploydemobucket/WordPressApp.zip \
+  --ignore-hidden-files
+
+6 - Create a service role for code deployment:
+
+https://docs.aws.amazon.com/codedeploy/latest/userguide/getting-started-create-service-role.html#getting-started-create-service-role-cli
+
+
+7 - Create Deployment Group:
+
+aws deploy create-deployment-group \
+  --application-name WordPress_App \
+  --deployment-group-name WordPress_DepGroup \
+  --deployment-config-name CodeDeployDefault.OneAtATime \
+  --ec2-tag-filters Key=Name,Value=test-wordpress,Type=KEY_AND_VALUE \
+  --service-role-arn arn:aws:iam::250281069813:role/CodeDeployServiceRole
+
+8 - Install Code Deploy Agent and keep it up-to-date (via Cron schedule)
+
+aws ssm create-association \
+  --name AWS-ConfigureAWSPackage \
+  --targets Key=tag:Name,Values=test-wordpress \
+  --parameters action=Install,name=AWSCodeDeployAgent \
+  --schedule-expression "cron(0 2 ? * SUN *)" 
+
+///
+wget https://aws-codedeploy-us-west-1.s3.us-west-1.amazonaws.com/latest/install
+./install auto
+
+
+9 - Create deployment job for the application 
+
+aws deploy create-deployment \
+  --application-name WordPress_App \
+  --deployment-config-name CodeDeployDefault.OneAtATime \
+  --deployment-group-name WordPress_DepGroup \
+  --s3-location bucket=usman.uk.codebucket,bundleType=zip,key=WordPressApp.zip
+
+10 - Check status of a single deployment
+
+aws deploy get-deployment --deployment-id d-NN5OJ4IRG --query 'deploymentInfo.status' --output text
+InProgress
+
+11 - Check status of multiple / all deployments
+
+aws deploy list-deployments --application-name WordPress_App --deployment-group-name WordPress_DepGroup --query 'deployments' --output text
+
+
+12 - List deployment instances:
+
+aws deploy list-deployment-instances --deployment-id d-NN5OJ4IRG
+
+
+wget https://aws-codedeploy-us-west-1.s3.us-west-1.amazonaws.com/latest/install
+13 - 
+
